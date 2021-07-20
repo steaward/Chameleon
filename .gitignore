@@ -1,4 +1,6 @@
 /Chameleon/bin
 /Chameleon/obj
+/Client/bin
+/Client/obj
 *.jpg
 *.png
