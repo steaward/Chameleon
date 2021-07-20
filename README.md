@@ -7,7 +7,7 @@ It will take screenshots of the game every 200ms, and parse the image for specif
 It will then click the object in the game.
 
 
-Major list of to-dos:
-Learn how to train the ML model.
-Draw boxes over the found objects in the windows form.
+#### Major list of to-dos:
+- Learn how to train the ML model.
+- Draw boxes over the found objects in the windows form.
 
