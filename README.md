@@ -1,6 +1,7 @@
 ### Chameleon
 
 This project is a WPF application which attaches itself to a running process.
+It is fully transparant and the running process's main window handle is what is in view.
 
 It will allow the user to record their actions (mouse/keyboard events) within this running process.
 After recording the actions, you can play back the records in real time. 
