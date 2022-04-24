@@ -6,10 +6,12 @@
         xmlns:local="clr-namespace:Client"
         mc:Ignorable="d"
         Loaded="Window_Loaded"
-        
-        Title="Chameleon" Height="450" Width="800" ResizeMode="NoResize">
+        Topmost="True"
+        Title="Chameleon" Height="450" Width="800" ResizeMode="NoResize" Background="{x:Null}">
 
-    <Canvas Name="overlay"  HorizontalAlignment="Left" Height="410" Margin="17,10,0,0" VerticalAlignment="Top" Width="757" Background="Transparent">
+    <!--<Grid x:Name="RootLayout">
+        <Button x:Name="button" Content="Button" HorizontalAlignment="Left" Margin="739,43,0,0" VerticalAlignment="Top"/>
 
-    </Canvas>
+    </Grid>-->
 </Window>
+

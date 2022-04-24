@@ -1,0 +1,26 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+
+namespace Client.Classes
+{
+    public enum Button
+    {
+        Left,
+        Right
+    }
+
+    public class MouseClick : InputData
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+        public Button Button { get; set; }
+
+        public MouseClick(int x, int y, Button btn)
+        {
+            this.X = x;
+            this.Y = y;
+            this.Button = btn;
+        }
+    }
+}

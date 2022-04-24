@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Windows;
+using System.Windows.Interop;
 
 namespace Client.Helpers
 {
@@ -51,10 +53,14 @@ namespace Client.Helpers
         [Flags]
         public enum MouseEvent : int
         {
-            MOUSEEVENTF_LEFTDOWN = 0x02,
-            MOUSEEVENTF_LEFTUP = 0x04,
-            MOUSEEVENTF_RIGHTDOWN = 0x08,
-            MOUSEEVENTF_RIGHTUP = 0x10
+            LEFTDOWN = 0x00000002,
+            LEFTUP = 0x00000004,
+            MIDDLEDOWN = 0x00000020,
+            MIDDLEUP = 0x00000040,
+            MOVE = 0x00000001,
+            ABSOLUTE = 0x00008000,
+            RIGHTDOWN = 0x00000008,
+            RIGHTUP = 0x00000010
         }
 
         public static int GWL_STYLE = -16;
@@ -100,13 +106,13 @@ namespace Client.Helpers
         public static extern long SetCursorPos(int x, int y);
 
         [DllImport("User32.Dll")]
-        public static extern bool ClientToScreen(IntPtr hWnd, ref Point point);
+        public static extern bool ClientToScreen(IntPtr hWnd, ref System.Drawing.Point point);
 
         [DllImport("user32.dll")]
         public static extern uint SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
 
-        [System.Runtime.InteropServices.DllImport("user32.dll")]
-        public static extern void mouse_event(MouseEvent dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+        //[System.Runtime.InteropServices.DllImport("user32.dll")]
+        //public static extern void mouse_event(MouseEvent dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
 
         public static void sendKeystroke(ushort k, IntPtr hwnd)
         {
@@ -114,13 +120,46 @@ namespace Client.Helpers
             const uint WM_SYSCOMMAND = 0x018;
             const uint SC_CLOSE = 0x053;
 
-
-            IntPtr result3 = SendMessage(hwnd, WM_KEYDOWN, ((IntPtr)k), (IntPtr)0);
-            System.Threading.Thread.Sleep(3000);
-
+            SendMessage(hwnd, WM_KEYDOWN, ((IntPtr)k), (IntPtr)0);
         }
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        public static extern void mouse_event(uint dwFlags, uint dx, uint dy, uint cButtons, uint dwExtraInfo);
+        public static extern void mouse_event(int dwFlags, int dx, int dy, int cButtons, int dwExtraInfo);
+
+        [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+        public static extern int ToUnicode(uint virtualKeyCode,uint scanCode,byte[] keyboardState,StringBuilder receivingBuffer, int bufferSize,uint flags);
+
+
+
+        //private static IntPtr DragHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
+        //{
+        //    switch ((WM)msg)
+        //    {
+        //        case WM.WINDOWPOSCHANGING:
+        //            {
+        //                WINDOWPOS pos = (WINDOWPOS)Marshal.PtrToStructure(lParam, typeof(WINDOWPOS));
+        //                if ((pos.flags & (int)SWP.NOMOVE) != 0)
+        //                {
+        //                    return IntPtr.Zero;
+        //                }
+
+        //                Window wnd = (Window)HwndSource.FromHwnd(hwnd).RootVisual;
+        //                if (wnd == null)
+        //                {
+        //                    return IntPtr.Zero;
+        //                }
+
+        //                // ** do whatever you need here **
+        //                // the new window position is in the pos variable
+        //                // just note that those are in Win32 "screen coordinates" not WPF device independent pixels
+
+
+        //            }
+        //            break;
+        //    }
+
+        //    return IntPtr.Zero;
+        //}
+
     }
 }
