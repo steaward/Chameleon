@@ -19,7 +19,39 @@ namespace Client.Classes
         public override string ToString()
         {
             StringBuilder charPressed = new StringBuilder(256);
-            ProcessHelpers.ToUnicode((uint)Code, 0, new byte[256], charPressed, charPressed.Capacity, 0);
+
+            // are we shift?
+            // handle special casse
+            if (this.Shift)
+            {
+                switch (Code)
+                {
+                    case 48:
+                        return ")";
+                    case 49:
+                        return "!";
+                    case 50:
+                        return "@";
+                    case 51:
+                        return "#";
+                    case 52:
+                        return "$";
+                    case 53:
+                        return "%";
+                    case 54:
+                        return "^";
+                    case 55:
+                        return "&";
+                    case 56:
+                        return "*";
+                    case 57:
+                        return "(";
+                }
+
+            }
+            else 
+                ProcessHelpers.ToUnicode((uint)Code, 0, new byte[256], charPressed, charPressed.Capacity, 0);
+            
             return charPressed.ToString();
         }
     }

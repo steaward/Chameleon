@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Interop;
 using Winook;
-
 namespace Client.Classes
 {
     public class Recording
@@ -19,9 +18,12 @@ namespace Client.Classes
         private KeyboardHook _keyboardHook;
         private MainWindow _window;
         private Process _currentProcess;
-        private Point _test;
         private long _currentTicks { get; set; }
         public List<Frame> Frames { get; set; }
+        private Frame _previousFrame { get; set; }
+        // used to know if we are entering string.
+        // easier to enter string all at once at computer than to send 1 char at a time...?
+        // maybe bot prevention will see this tho.
 
         public Recording(MouseHook mouseHook, KeyboardHook keyboardHook, MainWindow window)
         {
@@ -67,13 +69,11 @@ namespace Client.Classes
             if (!Frames.Any())
                 return;
 
-            var hwnd = new WindowInteropHelper(this._window);
-
-            var tasks = new List<Task>();
             foreach (var frame in Frames)
             {
-                var type = frame.InputData.GetType();
+                ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
 
+                var type = frame.InputData.GetType();
                 //if (type == typeof(Idle))
                 //{
                 //    var data = (Idle)frame.InputData;
@@ -82,26 +82,32 @@ namespace Client.Classes
 
                 if (type == typeof(KeyStroke))
                 {
-                  
-                    var data = (KeyStroke)frame.InputData;
-                    tasks.Add(Task.Factory.StartNew(() => SendKey(data)));
-                    //ProcessHelpers.sendKeystroke((ushort)data.Code, _currentProcess.MainWindowHandle);
+                    // some weird bug: if previously clicked...next keystroke is missed???
+                    KeyBoardInput.SendString("");
+                    await SendKey((KeyStroke)frame.InputData);
                 }
 
                 if (type == typeof(MouseClick))
-                {
-                    var data = (MouseClick)frame.InputData;
-                    tasks.Add(Task.Factory.StartNew(() => Click(data)));
-                }
-             
-            }
+                    await Click((MouseClick)frame.InputData);
 
-            Task.WaitAll(tasks.ToArray()); 
+                _previousFrame = frame;
+            }
         }
         public void InputReceived(object sender, KeyboardMessageEventArgs e)
         {
+            // for now - don't capture just shift key...
+            if (e.KeyValue == 16 && e.Shift)
+                return;
+
+            if (e.Direction != KeyDirection.Down)
+                return;
+            
             UpdateTicks();
-            Frames.Add(new Frame(new KeyStroke(e.KeyValue, e.Shift)));
+            var keyStroke = new KeyStroke(e.KeyValue, e.Shift);
+            Frames.Add(new Frame(keyStroke));
+            Debug.WriteLine($"Captured input: {keyStroke}");
+            
+            
             //Debug.Write($"Code: {e.KeyValue}; Modifiers: {e.Modifiers:x}; Flags: {e.Flags:x}; ");
             //Debug.WriteLine($"Shift: {e.Shift}; Control: {e.Control}; Alt: {e.Alt}; Direction: {e.Direction}");
         }
@@ -148,33 +154,41 @@ namespace Client.Classes
             //}
         }
 
-        private void Click(MouseClick data)
+        private async Task Click(MouseClick data)
         {
-            var thread = new Thread(() =>
-            {
+
+            // clicking needs to be on it's own thread.
+            // when thread returns, mouse_event message is sent?
+            // can't get this to work on main thread when looping through frames...
+           await Task.Run(async () =>
+           {
+                var sleepTimeGenerator = new Random();
+                int sleepTime = sleepTimeGenerator.Next(100, 500);
+
                 var eventTypeDown = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTDOWN :
                                                                     ProcessHelpers.MouseEvent.RIGHTDOWN;
 
                 var eventTypeUp = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTUP :
                                                                     ProcessHelpers.MouseEvent.RIGHTUP;
                 ProcessHelpers.SetCursorPos(data.X, data.Y);
+                await Task.Delay(300); // allow cursor to move into position...
                 ProcessHelpers.mouse_event((int)eventTypeDown, data.X, data.Y, 0, 0);
                 ProcessHelpers.mouse_event((int)eventTypeUp, data.X, data.Y, 0, 0);
-            });
+                ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
+           });
 
-            thread.Start();
         }
 
-        private void SendKey(KeyStroke data)
+        private async Task SendKey(KeyStroke data)
         {
-            // sleep a random amount of time between 100 milliseconds to 500
             var sleepTimeGenerator = new Random();
             int sleepTime = sleepTimeGenerator.Next(100, 500);
+
             ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
             KeyBoardInput.SendString(data.ToString());
-            
-            Thread.Sleep(sleepTime);
-
+            // add "user" delay to typing...
+            await Task.Delay(sleepTime);
         }
+
     }
 }

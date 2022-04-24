@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -54,7 +55,6 @@ namespace Client.Helpers
                     inputs.Add(input);
                 }
             }
-
             // Send all inputs together using a Windows API call.
             SendInput((uint)inputs.Count, inputs.ToArray(), Marshal.SizeOf(typeof(INPUT)));
         }
