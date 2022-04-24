@@ -49,9 +49,10 @@ namespace Client.Classes
 
             // todo
             //_mouseHook.MouseWheel += MouseWheel;
-
             _keyboardHook.MessageReceived += InputReceived;
         }
+
+
         public Recording Stop()
         {
             UpdateTicks();
@@ -64,6 +65,7 @@ namespace Client.Classes
 
             return this;
         }
+        
         public async void Play()
         {
             if (!Frames.Any())
@@ -74,25 +76,22 @@ namespace Client.Classes
                 ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
 
                 var type = frame.InputData.GetType();
-                //if (type == typeof(Idle))
-                //{
-                //    var data = (Idle)frame.InputData;
-                //    Thread.Sleep((int)data.Ticks / 10000);
-                //}
 
                 if (type == typeof(KeyStroke))
                 {
-                    // some weird bug: if previously clicked...next keystroke is missed???
-                    KeyBoardInput.SendString("");
                     await SendKey((KeyStroke)frame.InputData);
                 }
 
                 if (type == typeof(MouseClick))
+                {
                     await Click((MouseClick)frame.InputData);
+                    await Task.Delay(300); // delay after clicking or else the next interop message might be missed...
+                }
 
                 _previousFrame = frame;
             }
         }
+       
         public void InputReceived(object sender, KeyboardMessageEventArgs e)
         {
             // for now - don't capture just shift key...
@@ -162,19 +161,20 @@ namespace Client.Classes
             // can't get this to work on main thread when looping through frames...
            await Task.Run(async () =>
            {
+               
                 var sleepTimeGenerator = new Random();
-                int sleepTime = sleepTimeGenerator.Next(100, 500);
+                int sleepTime = sleepTimeGenerator.Next(300, 500);
 
                 var eventTypeDown = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTDOWN :
-                                                                    ProcessHelpers.MouseEvent.RIGHTDOWN;
+                                                                 ProcessHelpers.MouseEvent.RIGHTDOWN;
 
                 var eventTypeUp = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTUP :
-                                                                    ProcessHelpers.MouseEvent.RIGHTUP;
+                                                               ProcessHelpers.MouseEvent.RIGHTUP;
                 ProcessHelpers.SetCursorPos(data.X, data.Y);
-                await Task.Delay(300); // allow cursor to move into position...
+                await Task.Delay(sleepTime); // allow cursor to move into position
+                
                 ProcessHelpers.mouse_event((int)eventTypeDown, data.X, data.Y, 0, 0);
                 ProcessHelpers.mouse_event((int)eventTypeUp, data.X, data.Y, 0, 0);
-                ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
            });
 
         }
