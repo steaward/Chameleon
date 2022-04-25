@@ -1,26 +1,18 @@
-﻿using Client.Classes;
-using Client.Helpers;
-using Newtonsoft.Json;
+﻿
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using Winook;
 using Button = System.Windows.Controls.Button;
+using Client.Classes;
+using Client.Helpers;
+using Newtonsoft.Json;
 
 namespace Client
 {
@@ -30,11 +22,22 @@ namespace Client
         private Button playBtn = new Button();
 
         private Process oldschoolRunescape = new Process();
+        
         private MouseHook _mouseHook;
         private KeyboardHook _keyboardHook;
         private Recording _currentRecording;
-
- 
+        
+        private IntPtr _startUpWindowHandle;
+        private IntPtr _oldschoolRunescape;
+        /// <summary>
+        /// Once window has loaded, hide it from view.
+        /// Attach window to a process
+        /// Show the window once this has completed
+        /// Process is now this window.
+        /// Startup global hooks on the thread of this window
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void Window_Loaded(object sender, EventArgs e)
         {
 
@@ -42,9 +45,10 @@ namespace Client
             this.Hide();
 
             var self = new WindowInteropHelper(this);
-
+            _startUpWindowHandle = self.Handle;
+            
             var currentPos = new System.Drawing.Rectangle();
-            ProcessHelpers.GetWindowRect(self.Handle, ref currentPos);
+            ProcessHelpers.GetWindowRect(_startUpWindowHandle, ref currentPos);
 
             var jagexLauncher = new ProcessStartInfo()
             {
@@ -107,14 +111,26 @@ namespace Client
                     ProcessHelpers.SetWindowPos(oldschoolRunescape.MainWindowHandle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
 
                     // set ourselves as the active window now, but old school will appear in window.
-                    ProcessHelpers.SetWindowPos(self.Handle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
+                    ProcessHelpers.SetWindowPos(_startUpWindowHandle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
 
                     // attach ourselves to the old school window, which by now should be the active window 
-                    ProcessHelpers.SetParent(oldschoolRunescape.MainWindowHandle, self.Handle);
+                    ProcessHelpers.SetParent(oldschoolRunescape.MainWindowHandle, _startUpWindowHandle);
                     InitializeControls();
-               
-                    started = true;
 
+                    // Determine the Oldschool window handle to send messages to:
+                    // it spawns a lot of windows...
+                    _startUpWindowHandle = ProcessHelpers.FindWindow(null, "Chameleon");
+                    var allChildWindows = new WindowHandleInfo(_startUpWindowHandle).GetAllChildHandles();
+                    foreach (var childWindow in allChildWindows)
+                    {
+                        var ancestors = new WindowHandleInfo(childWindow).GetAllChildHandles();
+                        if (!ancestors.Any())
+                        {
+                            _oldschoolRunescape = childWindow;
+                            break;
+                        }
+                    }
+                    started = true;
                 }
                 else
                 {
@@ -122,14 +138,14 @@ namespace Client
                     oldschoolRunescape.Refresh();
                 }
             }
-
             this.Show();
-
         }
 
         // All controls need to be inialized after osrs process has attached to this window.
         private void InitializeControls()
         {
+            // stack panel full of buttons for now?
+            // to-do allow users to select their own screen recordings to play back.
             var stackPanel = new StackPanel();
             stackPanel.VerticalAlignment = VerticalAlignment.Top;
             stackPanel.HorizontalAlignment = HorizontalAlignment.Right;
@@ -153,7 +169,7 @@ namespace Client
 
         private void StartRecording()
         {
-            _currentRecording = new Recording(_mouseHook, _keyboardHook, this);
+            _currentRecording = new Recording(_mouseHook, _keyboardHook);
             _currentRecording.Start();
         }
 
@@ -164,8 +180,8 @@ namespace Client
             {
                 TypeNameHandling = TypeNameHandling.All
             });
-
-            var recording = new Recording(frames, this, oldschoolRunescape);
+            
+            var recording = new Recording(frames, _oldschoolRunescape, _startUpWindowHandle);
             recording.Play();
         }
 

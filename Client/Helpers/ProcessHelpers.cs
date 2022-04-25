@@ -86,9 +86,19 @@ namespace Client.Helpers
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, long uFlags);
 
         [DllImport("user32.dll")]
+        public static extern IntPtr WindowFromPoint(System.Windows.Point pnt);
+        [DllImport("user32.dll")]
+        internal static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
+        [DllImport("user32.dll")]
+        public static extern bool PostMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+        [DllImport("user32.dll")]
+        public static extern bool ScreenToClient(IntPtr hWnd, ref System.Windows.Point lpPoint);
+        [DllImport("user32.dll")]
         public static extern IntPtr GetForegroundWindow();
         [DllImport("user32.dll")]
-        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
+        public static extern IntPtr SendMessage(IntPtr hWnd, uint Msg, int wParam, int lParam);
+        [DllImport("user32.dll")]
+        public static extern IntPtr SendMessage(uint hWnd, uint Msg, uint wParam, uint lParam);
         [DllImport("user32.dll")]
         public static extern IntPtr PostMessage(IntPtr hWnd, uint Msg, IntPtr wParam, IntPtr lParam);
         // Get a handle to an application window.
@@ -120,7 +130,7 @@ namespace Client.Helpers
             const uint WM_SYSCOMMAND = 0x018;
             const uint SC_CLOSE = 0x053;
 
-            SendMessage(hwnd, WM_KEYDOWN, ((IntPtr)k), (IntPtr)0);
+            //SendMessage(hwnd, WM_KEYDOWN, ((IntPtr)k), (IntPtr)0);
         }
 
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]

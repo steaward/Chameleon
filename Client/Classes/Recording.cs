@@ -16,8 +16,8 @@ namespace Client.Classes
         //private int _processId { get; set; }
         private MouseHook _mouseHook;
         private KeyboardHook _keyboardHook;
-        private MainWindow _window;
-        private Process _currentProcess;
+        private IntPtr _startupWindowHandle;
+        private IntPtr _targetWindowHandle;
         private long _currentTicks { get; set; }
         public List<Frame> Frames { get; set; }
         private Frame _previousFrame { get; set; }
@@ -25,20 +25,22 @@ namespace Client.Classes
         // easier to enter string all at once at computer than to send 1 char at a time...?
         // maybe bot prevention will see this tho.
 
-        public Recording(MouseHook mouseHook, KeyboardHook keyboardHook, MainWindow window)
+        public Recording(MouseHook mouseHook, KeyboardHook keyboardHook)
         {
             this._mouseHook = mouseHook;
             this._keyboardHook = keyboardHook;
-            this._window = window;
         }
         
-        public Recording(List<Frame> Frames,MainWindow window, Process process)
+        public Recording(List<Frame> Frames, IntPtr _targetWindowHandle, IntPtr _startupWindowHandle)
         {
             this.Frames = Frames;
-            this._window = window;
-            this._currentProcess = process;
+            this._targetWindowHandle = _targetWindowHandle;
+            this._startupWindowHandle = _startupWindowHandle;
         }
 
+        /// <summary>
+        /// Setup global hooks for events to record.
+        /// </summary>
         public void Start()
         {
             _currentTicks = DateTime.Now.Ticks;
@@ -52,7 +54,10 @@ namespace Client.Classes
             _keyboardHook.MessageReceived += InputReceived;
         }
 
-
+        /// <summary>
+        /// Clear all global hooks for events
+        /// </summary>
+        /// <returns></returns>
         public Recording Stop()
         {
             UpdateTicks();
@@ -73,26 +78,17 @@ namespace Client.Classes
 
             foreach (var frame in Frames)
             {
-                ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
-
-                var type = frame.InputData.GetType();
-
-                if (type == typeof(KeyStroke))
-                {
-                    await SendKey((KeyStroke)frame.InputData);
-                }
-
-                if (type == typeof(MouseClick))
-                {
-                    await Click((MouseClick)frame.InputData);
-                    await Task.Delay(300); // delay after clicking or else the next interop message might be missed...
-                }
-
+                await frame.Play(_oldSchoolRunescapeHandle, _startUpWindowHandle);
                 _previousFrame = frame;
             }
         }
+
+        public string Save()
+        {
+            return "";
+        }
        
-        public void InputReceived(object sender, KeyboardMessageEventArgs e)
+        private void InputReceived(object sender, KeyboardMessageEventArgs e)
         {
             // for now - don't capture just shift key...
             if (e.KeyValue == 16 && e.Shift)
@@ -111,7 +107,7 @@ namespace Client.Classes
             //Debug.WriteLine($"Shift: {e.Shift}; Control: {e.Control}; Alt: {e.Alt}; Direction: {e.Direction}");
         }
 
-        public void LeftClick(object sender, MouseMessageEventArgs e)
+        private void LeftClick(object sender, MouseMessageEventArgs e)
         {
             UpdateTicks();
             Frames.Add(new Frame(new MouseClick(e.X, e.Y, Button.Left)));
@@ -120,7 +116,7 @@ namespace Client.Classes
 
         }
 
-        public void RightClick(object sender, MouseMessageEventArgs e)
+        private void RightClick(object sender, MouseMessageEventArgs e)
         {
             UpdateTicks();
             Frames.Add(new Frame(new MouseClick(e.X, e.Y, Button.Right)));
@@ -143,51 +139,14 @@ namespace Client.Classes
 
         private void UpdateTicks()
         {
-            //if (Frames != null && Frames.Any())
-            //{
-            //    var timeIdle = DateTime.Now.Ticks - _currentTicks;
-            //    _currentTicks = DateTime.Now.Ticks;
-            //    // only care if idled longer than 1 second
-            //    if (timeIdle > 10000000)
-            //        Frames.Add(new Frame(new Idle(timeIdle)));
-            //}
-        }
-
-        private async Task Click(MouseClick data)
-        {
-
-            // clicking needs to be on it's own thread.
-            // when thread returns, mouse_event message is sent?
-            // can't get this to work on main thread when looping through frames...
-           await Task.Run(async () =>
-           {
-               
-                var sleepTimeGenerator = new Random();
-                int sleepTime = sleepTimeGenerator.Next(300, 500);
-
-                var eventTypeDown = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTDOWN :
-                                                                 ProcessHelpers.MouseEvent.RIGHTDOWN;
-
-                var eventTypeUp = data.Button == Button.Left ? ProcessHelpers.MouseEvent.LEFTUP :
-                                                               ProcessHelpers.MouseEvent.RIGHTUP;
-                ProcessHelpers.SetCursorPos(data.X, data.Y);
-                await Task.Delay(sleepTime); // allow cursor to move into position
-                
-                ProcessHelpers.mouse_event((int)eventTypeDown, data.X, data.Y, 0, 0);
-                ProcessHelpers.mouse_event((int)eventTypeUp, data.X, data.Y, 0, 0);
-           });
-
-        }
-
-        private async Task SendKey(KeyStroke data)
-        {
-            var sleepTimeGenerator = new Random();
-            int sleepTime = sleepTimeGenerator.Next(100, 500);
-
-            ProcessHelpers.SetForegroundWindow(_currentProcess.MainWindowHandle);
-            KeyBoardInput.SendString(data.ToString());
-            // add "user" delay to typing...
-            await Task.Delay(sleepTime);
+            if (Frames != null && Frames.Any())
+            {
+                var timeIdle = DateTime.Now.Ticks - _currentTicks;
+                _currentTicks = DateTime.Now.Ticks;
+                // only care if idled longer than 1 second
+                if (timeIdle > 10000000)
+                    Frames.Add(new Frame(new Idle(timeIdle)));
+            }
         }
 
     }
