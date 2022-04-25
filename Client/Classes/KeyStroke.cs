@@ -9,14 +9,14 @@ namespace Client.Classes
     {
         public int Code { get; set; }
         public bool Shift { get; set; }
-        public string Value { get; set; }
+        public char Value { get; set; }
         public KeyStroke(int code, bool shift)
         {
             this.Code = code;
             this.Shift = shift;
         }
 
-        public override string ToString()
+        public char ToChar()
         {
             StringBuilder charPressed = new StringBuilder(256);
 
@@ -27,32 +27,31 @@ namespace Client.Classes
                 switch (Code)
                 {
                     case 48:
-                        return ")";
+                        return ')';
                     case 49:
-                        return "!";
+                        return '!';
                     case 50:
-                        return "@";
+                        return '@';
                     case 51:
-                        return "#";
+                        return '#';
                     case 52:
-                        return "$";
+                        return '$';
                     case 53:
-                        return "%";
+                        return '%';
                     case 54:
-                        return "^";
+                        return '^';
                     case 55:
-                        return "&";
+                        return '&';
                     case 56:
-                        return "*";
+                        return '*';
                     case 57:
-                        return "(";
+                        return '(';
                 }
-
             }
-            else 
-                ProcessHelpers.ToUnicode((uint)Code, 0, new byte[256], charPressed, charPressed.Capacity, 0);
+                else
+                    ProcessHelpers.ToUnicode((uint)Code, 0, new byte[256], charPressed, charPressed.Capacity, 0);
             
-            return charPressed.ToString();
+            return charPressed.ToString().ToCharArray()[0];
         }
     }
 }

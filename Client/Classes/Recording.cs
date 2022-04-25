@@ -78,7 +78,7 @@ namespace Client.Classes
 
             foreach (var frame in Frames)
             {
-                await frame.Play(_oldSchoolRunescapeHandle, _startUpWindowHandle);
+                await frame.Play(_targetWindowHandle, _startupWindowHandle);
                 _previousFrame = frame;
             }
         }

@@ -29,6 +29,7 @@ namespace Client
         
         private IntPtr _startUpWindowHandle;
         private IntPtr _oldschoolRunescape;
+        private IntPtr _oldschoolWindow;
         /// <summary>
         /// Once window has loaded, hide it from view.
         /// Attach window to a process
@@ -89,6 +90,7 @@ namespace Client
 
                 if (oldschoolRunescape.MainWindowHandle != IntPtr.Zero)
                 {
+                    _oldschoolWindow = ProcessHelpers.FindWindow(null, "Old School Runescape");
                     // used for recording global hooks
                     _mouseHook = new MouseHook(oldschoolRunescape.Id);
                     _mouseHook.InstallAsync();
@@ -117,10 +119,9 @@ namespace Client
                     ProcessHelpers.SetParent(oldschoolRunescape.MainWindowHandle, _startUpWindowHandle);
                     InitializeControls();
 
-                    // Determine the Oldschool window handle to send messages to:
+                    // Determine the Oldschool window handle to send click event messages to:
                     // it spawns a lot of windows...
-                    _startUpWindowHandle = ProcessHelpers.FindWindow(null, "Chameleon");
-                    var allChildWindows = new WindowHandleInfo(_startUpWindowHandle).GetAllChildHandles();
+                    var allChildWindows = new WindowHandleInfo(_oldschoolWindow).GetAllChildHandles();
                     foreach (var childWindow in allChildWindows)
                     {
                         var ancestors = new WindowHandleInfo(childWindow).GetAllChildHandles();
@@ -181,7 +182,7 @@ namespace Client
                 TypeNameHandling = TypeNameHandling.All
             });
             
-            var recording = new Recording(frames, _oldschoolRunescape, _startUpWindowHandle);
+            var recording = new Recording(frames, _oldschoolRunescape, _oldschoolWindow);
             recording.Play();
         }
 

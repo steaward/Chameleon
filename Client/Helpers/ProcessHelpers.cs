@@ -139,7 +139,8 @@ namespace Client.Helpers
         [DllImport("user32.dll", CharSet = CharSet.Unicode)]
         public static extern int ToUnicode(uint virtualKeyCode,uint scanCode,byte[] keyboardState,StringBuilder receivingBuffer, int bufferSize,uint flags);
 
-
+        [DllImport("user32.dll")]
+        public static extern byte VkKeyScan(char ch);
 
         //private static IntPtr DragHook(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handeled)
         //{

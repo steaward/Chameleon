@@ -74,18 +74,33 @@ namespace Client.Classes
  
         private async Task SendKey(KeyStroke data, IntPtr _startupWindow)
         {
+            // fake user delay? 
             var sleepTimeGenerator = new Random();
             int sleepTime = sleepTimeGenerator.Next(100, 500);
-
-            ProcessHelpers.SetForegroundWindow(_startupWindow);
-            KeyBoardInput.SendString(data.ToString());
-            // add "user" delay to typing...
             await Task.Delay(sleepTime);
+
+            uint WM_KEYDOWN = 0x0100;
+            uint WM_KEYUP = 0x0101;
+            uint WM_CHAR = 0x0102;
+
+            // we have to process post WM_KEYDOWN For enter, tab ect.
+            if (data.Shift)
+                ProcessHelpers.PostMessage(_startupWindow, WM_KEYDOWN, 0x10, 0);
+            // ProcessHelpers.VkKeyScan(data.ToChar()) <-- doesn't get us @
+            
+            // use unicode for all characters...
+            ProcessHelpers.PostMessage(_startupWindow, WM_CHAR, data.ToChar(), 0) ;
+            await Task.Delay(100);
+
+            //ProcessHelpers.SetForegroundWindow(_startupWindow);
+            //KeyBoardInput.SendString(data.ToString());
+            //// add "user" delay to typing...
+            //await Task.Delay(sleepTime);
 
 
             //var current = ProcessHelpers.FindWindow(null, "Chameleon");
             //var allChildWindows = new WindowHandleInfo(current).GetAllChildHandles();
-  
+
             //foreach (var window in allChildWindows)
             //{
             //    ProcessHelpers.SetForegroundWindow(window);
