@@ -21,6 +21,7 @@ namespace Client.Classes
         private long _currentTicks { get; set; }
         public List<Frame> Frames { get; set; }
         private Frame _previousFrame { get; set; }
+        private CancellationTokenSource _tokenSource { get; set; }
         // used to know if we are entering string.
         // easier to enter string all at once at computer than to send 1 char at a time...?
         // maybe bot prevention will see this tho.
@@ -29,6 +30,7 @@ namespace Client.Classes
         {
             this._mouseHook = mouseHook;
             this._keyboardHook = keyboardHook;
+            this._tokenSource = new CancellationTokenSource();
         }
         
         public Recording(List<Frame> Frames, IntPtr _targetWindowHandle, IntPtr _startupWindowHandle)
@@ -36,6 +38,8 @@ namespace Client.Classes
             this.Frames = Frames;
             this._targetWindowHandle = _targetWindowHandle;
             this._startupWindowHandle = _startupWindowHandle;
+            this._tokenSource = new CancellationTokenSource();
+
         }
 
         /// <summary>
@@ -68,19 +72,38 @@ namespace Client.Classes
             if (_keyboardHook != null)
                 _keyboardHook.RemoveAllHandlers();
 
+            _tokenSource.Cancel(true);
             return this;
         }
         
-        public async void Play()
+        public async Task Play()
         {
             if (!Frames.Any())
                 return;
 
-            foreach (var frame in Frames)
+            try
             {
-                await frame.Play(_targetWindowHandle, _startupWindowHandle);
-                _previousFrame = frame;
+                var _currentTask = Task.Run(async () =>
+                {
+                    foreach (var frame in Frames)
+                    {
+                        _tokenSource.Token.ThrowIfCancellationRequested();
+
+                        await frame.Play(_targetWindowHandle, _startupWindowHandle);
+                        _previousFrame = frame;
+
+                    }
+                }, _tokenSource.Token); ;
+
+                await _currentTask;
             }
+            catch (OperationCanceledException e)
+            {
+                Console.WriteLine($"{nameof(OperationCanceledException)} thrown with message: {e.Message}");
+            }
+            
+
+
         }
 
         public string Save()

@@ -41,6 +41,8 @@ namespace Client.Classes
             var point = data.Point;
             uint rightClick = 0x0204;
             uint leftClick = 0x0201;
+            uint clickTypeUp = data.Button == Button.Left ? (uint)0x0202 : (uint)0x0201;
+            uint clickTypeDown = data.Button == Button.Left ? (uint)0x0201 : (uint)0x0204;
             uint clickType = data.Button == Button.Left ? leftClick : rightClick;
             // clicking needs to be on it's own thread.
             // when thread returns, mouse_event message is sent?
@@ -49,10 +51,14 @@ namespace Client.Classes
             {
                 // new way: post click message...
                 ProcessHelpers.ScreenToClient(targetWindowHandle, ref point);
-                var intPtr99 = ProcessHelpers.PostMessage(targetWindowHandle, clickType, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
-                var intPtr9 = ProcessHelpers.PostMessage(targetWindowHandle, clickType, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
-              
-                await Task.Delay(300);
+                var sendUp = ProcessHelpers.SendMessage(targetWindowHandle, clickTypeUp, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
+                await Task.Delay(50);
+                var clickUp = ProcessHelpers.PostMessage(targetWindowHandle, clickTypeUp, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
+                await Task.Delay(100);
+                var sendUp2 = ProcessHelpers.SendMessage(targetWindowHandle, clickTypeDown, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
+                await Task.Delay(50);
+                var clickUp2 = ProcessHelpers.PostMessage(targetWindowHandle, clickTypeDown, 0x0001, MAKELPARAM((int)point.X, (int)point.Y));
+                await Task.Delay(100);
 
                 // old way:
                 //var sleepTimeGenerator = new Random();
@@ -87,9 +93,16 @@ namespace Client.Classes
             if (data.Shift)
                 ProcessHelpers.PostMessage(_startupWindow, WM_KEYDOWN, 0x10, 0);
             // ProcessHelpers.VkKeyScan(data.ToChar()) <-- doesn't get us @
-            
+
             // use unicode for all characters...
-            ProcessHelpers.PostMessage(_startupWindow, WM_CHAR, data.ToChar(), 0) ;
+            try
+            {
+                ProcessHelpers.PostMessage(_startupWindow, WM_CHAR, data.ToChar(), 0);
+            }
+            catch (Exception e)
+            {
+                ProcessHelpers.PostMessage(_startupWindow, WM_CHAR, data.Code, 0);
+            }
             await Task.Delay(100);
 
             //ProcessHelpers.SetForegroundWindow(_startupWindow);
