@@ -14,6 +14,8 @@ using Client.Classes;
 using Client.Helpers;
 using Newtonsoft.Json;
 using System.Threading.Tasks;
+using Bot;
+using Bot.Models;
 
 namespace Client
 {
@@ -24,6 +26,8 @@ namespace Client
         private Button stopBtn = new Button();
         private Button loginRecord = new Button();
         private Button loginBtn = new Button();
+
+        private RunescapeBot bot;
 
         private bool loggedIn;
         private bool stop;
@@ -139,6 +143,7 @@ namespace Client
                     oldschoolRunescape.Refresh();
                 }
             }
+
             this.Show();
         }
 
@@ -191,8 +196,19 @@ namespace Client
 
         private void StartRecording()
         {
-            _currentRecording = new Recording(_mouseHook, _keyboardHook);
-            _currentRecording.Start();
+            // for now - got rid of 'recording' for testing.
+
+            // make a fake routine
+            var routine = new Routine();
+
+            bot = new RunescapeBot(_startUpWindowHandle);
+            bot.Setup();
+
+            // start the bot.
+            bot.Run(routine);
+            
+            //_currentRecording = new Recording(_mouseHook, _keyboardHook);
+            //_currentRecording.Start();
         }
 
         private void btnStop(object sender, RoutedEventArgs e)
@@ -267,21 +283,22 @@ namespace Client
 
         private void btnRecord(object sender, RoutedEventArgs e)
         {
-            bool startedRecording = false;
-            if (recordBtn.Tag.ToString().Equals("Stopped", StringComparison.OrdinalIgnoreCase))
-            {
-                recordBtn.Tag = "Start";
-                startedRecording = true;
-            }
-            else
-                recordBtn.Tag = "Stopped";
+            StartRecording();
+            //bool startedRecording = false;
+            //if (recordBtn.Tag.ToString().Equals("Stopped", StringComparison.OrdinalIgnoreCase))
+            //{
+            //    recordBtn.Tag = "Start";
+            //    startedRecording = true;
+            //}
+            //else
+            //    recordBtn.Tag = "Stopped";
 
-            recordBtn.Content = startedRecording ? "Stop Recording" : "Start Recording";
+            //recordBtn.Content = startedRecording ? "Stop Recording" : "Start Recording";
 
-            if (startedRecording)
-                StartRecording();
-            else
-                StopRecording("Recording.json");
+            //if (startedRecording)
+            //    StartRecording();
+            //else
+            //    StopRecording("Recording.json");
         }
 
         private void btnLoginRecord(object sender, RoutedEventArgs e)
