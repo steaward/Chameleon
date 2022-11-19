@@ -12,8 +12,8 @@ Hooks directly into pinvoke functionality. Playback does not require control of 
 
 
 #### Major list of to-dos:
-- Started: OpenCV image processing
-       - Allow recordings to look for specific objects
-       - Draw boxes over the found objects in the windows form.
-       - Automate response to objects (click on found objects)
+- Started: OpenCV image processing  
+       - Allow recordings to look for specific objects  
+       - Draw boxes over the found objects in the windows form.  
+       - Automate response to objects (click on found objects)  
 
