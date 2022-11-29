@@ -16,6 +16,8 @@ using Newtonsoft.Json;
 using System.Threading.Tasks;
 using Bot;
 using Bot.Models;
+using Emgu.CV.Features2D;
+using Bot.Imports;
 
 namespace Client
 {
@@ -49,7 +51,7 @@ namespace Client
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
-        private void Window_Loaded(object sender, EventArgs e)
+        private async void Window_Loaded(object sender, EventArgs e)
         {
 
             // don't display until we have attached ourselves to OS process.
@@ -61,20 +63,13 @@ namespace Client
             var currentPos = new System.Drawing.Rectangle();
             ProcessHelpers.GetWindowRect(_startUpWindowHandle, ref currentPos);
 
-            var jagexLauncher = new ProcessStartInfo()
-            {
-                FileName = "C:\\Users\\steve\\jagexcache\\jagexlauncher\\bin\\JagexLauncher.exe",
-                Arguments = "oldschool",
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                Verb = "runas",
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
             // close all processes first
-            var alreadyOpenedClients = Process.GetProcessesByName("JagexLauncher");
-            if (alreadyOpenedClients.Count() > 1)
+            var alreadyOpenedClients = Process.GetProcessesByName("RuneLite");
+
+            if (alreadyOpenedClients.Length == 1 ) {
+                oldschoolRunescape = alreadyOpenedClients[0];
+            }
+            else
             {
                 foreach (var client in alreadyOpenedClients)
                 {
@@ -85,47 +80,61 @@ namespace Client
 
                 // Wait a second for computer 
                 Thread.Sleep(1000);
-            }
 
-            oldschoolRunescape = Process.Start(jagexLauncher);
-            oldschoolRunescape.WaitForInputIdle();
+                oldschoolRunescape = StartRuneLite();
+            }
+          
+            //Thread.Sleep(5000);
+
+            //while (ProcessHelpers.FindWindow("SunAwtFrame", "RuneLite") == IntPtr.Zero || (oldschoolRunescape != null && oldschoolRunescape.MainWindowHandle == IntPtr.Zero))
+            //{
+            //    oldschoolRunescape = Process.GetProcessesByName("RuneLite")[0];
+            //}
 
             var started = false;
-
             while (!started)
             {
                 // launcher needs to launch the oficial client.
                 // it's going to swap process id's now.
-                oldschoolRunescape = Process.GetProcessById(oldschoolRunescape.Id);
+                //oldschoolRunescape = Process.GetProcessById(oldschoolRunescape.Id);
 
                 if (oldschoolRunescape.MainWindowHandle != IntPtr.Zero)
                 {
-                    _oldschoolWindow = ProcessHelpers.FindWindow(null, "Old School Runescape");
+                    // get child windows to find OSRS window:
+                    //while (_oldschoolWindow == IntPtr.Zero) 
+                    //{
+                    //    _oldschoolWindow = ProcessHelpers.FindWindow(null, "RuneLite");
+                    //    //var childrenWindows = Win32Api.GetChildWindows(_oldschoolWindow);
+                    //    //_oldschoolWindow = childrenWindows.Last();
+                    //}
+
                     // used for recording global hooks
                     _mouseHook = new MouseHook(oldschoolRunescape.Id);
-                    _mouseHook.InstallAsync();
+                    await _mouseHook.InstallAsync();
 
                     _keyboardHook = new KeyboardHook(oldschoolRunescape.Id);
-                    _keyboardHook.InstallAsync();
+                    await _keyboardHook.InstallAsync();
+
 
                     // Get the oldschool window size
-                    ProcessHelpers.GetWindowRect(oldschoolRunescape.MainWindowHandle, ref osWindow);
+                    //ProcessHelpers.GetWindowRect(oldschoolRunescape.MainWindowHandle, ref osWindow);
+                    //ProcessHelpers.GetWindowRect(_oldschoolWindow, ref osWindow);
 
-                    this.Height = osWindow.Width - osWindow.X - 100;
-                    this.Width = osWindow.Width - osWindow.X;
+                    //this.Height = osWindow.Width - osWindow.X - 100;
+                    //this.Width = osWindow.Width - osWindow.X;
 
                     //Turn the old school client into nothing but a visible window(no borders, no menu)
                     //Set window as a child process as well, as it is about to become the child of the current window.
-                    ProcessHelpers.SetWindowLong(oldschoolRunescape.MainWindowHandle, (int)ProcessHelpers.WindowLongFlags.GWL_STYLE, ProcessHelpers.winStyle.WS_CHILD);
+                   // ProcessHelpers.SetWindowLong(_oldschoolWindow, (int)ProcessHelpers.WindowLongFlags.GWL_STYLE, ProcessHelpers.winStyle.WS_CHILD);
 
                     //set oldschool as active, so it appears on top of current window.
-                    ProcessHelpers.SetWindowPos(oldschoolRunescape.MainWindowHandle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
+                    //ProcessHelpers.SetWindowPos(_oldschoolWindow, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
 
                     // set ourselves as the active window now, but old school will appear in window.
-                    ProcessHelpers.SetWindowPos(_startUpWindowHandle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
+                    //ProcessHelpers.SetWindowPos(_startUpWindowHandle, (IntPtr)(0), 0, 0, osWindow.Width - osWindow.X, osWindow.Height - osWindow.Y, 0x0040 | 0x4000);
 
                     // attach ourselves to the old school window, which by now should be the active window 
-                    ProcessHelpers.SetParent(oldschoolRunescape.MainWindowHandle, _startUpWindowHandle);
+                    //ProcessHelpers.SetParent(_oldschoolWindow, _startUpWindowHandle);
 
                     //var controls = new Windows.Controls(this);
                     //controls.Show();
@@ -133,7 +142,7 @@ namespace Client
 
                     // Determine the Oldschool window handle to send click event messages to:
                     // it spawns a lot of windows...
-                    checkForProcessUpdates();
+                    //checkForProcessUpdates();
 
                     started = true;
                 }
@@ -144,6 +153,11 @@ namespace Client
                 }
             }
 
+            ProcessHelpers.GetWindowRect(oldschoolRunescape.MainWindowHandle, ref osWindow);
+
+            this.WindowStartupLocation = WindowStartupLocation.Manual;
+            this.Top = osWindow.Bottom - 100;
+            this.Left = osWindow.Left;
             this.Show();
         }
 
@@ -186,10 +200,10 @@ namespace Client
 
 
             stackPanel.Children.Add(recordBtn);
-            stackPanel.Children.Add(playBtn);
             stackPanel.Children.Add(stopBtn);
-            stackPanel.Children.Add(loginRecord);
-            stackPanel.Children.Add(loginBtn);
+            //stackPanel.Children.Add(playBtn);
+            //stackPanel.Children.Add(loginRecord);
+            //stackPanel.Children.Add(loginBtn);
             
             this.AddChild(stackPanel);
         }
@@ -201,7 +215,7 @@ namespace Client
             // make a fake routine
             var routine = new Routine();
 
-            bot = new RunescapeBot(_startUpWindowHandle);
+            bot = new RunescapeBot(oldschoolRunescape.MainWindowHandle);
             bot.Setup();
 
             // start the bot.
@@ -215,6 +229,9 @@ namespace Client
         {
             if (_currentRecording != null)
                 _currentRecording.Stop();
+
+            if (bot != null)
+                bot.Stop();
 
             stop = true;
         }
@@ -356,6 +373,34 @@ namespace Client
             checkForProcessUpdates();
             loggedIn = true;
             return;
+        }
+
+        private Process StartRuneLite()
+        {
+            //var jagexLauncher = new ProcessStartInfo()
+            //{
+            //    FileName = "C:\\Users\\steve\\jagexcache\\jagexlauncher\\bin\\JagexLauncher.exe",
+            //    Arguments = "oldschool",
+            //    RedirectStandardInput = true,
+            //    RedirectStandardOutput = true,
+            //    Verb = "runas",
+            //    UseShellExecute = false,
+            //    CreateNoWindow = true
+            //};
+
+            ProcessStartInfo runeLite = new ProcessStartInfo()
+            {
+                FileName = "C:\\Users\\steve\\AppData\\Local\\RuneLite\\RuneLite.exe",
+                //Arguments = "oldschool",
+                //RedirectStandardInput = true,
+                //RedirectStandardOutput = true,
+                //Verb = "runas",
+                UseShellExecute = true,
+                //CreateNoWindow = true
+            };
+
+            return Process.Start(runeLite);
+
         }
     }
 

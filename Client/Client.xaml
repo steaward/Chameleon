@@ -7,7 +7,7 @@
         mc:Ignorable="d"
         Loaded="Window_Loaded"
         Topmost="True"
-        Title="Chameleon" Height="450" Width="800" ResizeMode="NoResize" Background="{x:Null}">
+        Title="Chameleon" Height="167" Width="562" ResizeMode="NoResize" Background="{x:Null}">
 
     <!--<Grid x:Name="RootLayout">
         <Button x:Name="button" Content="Button" HorizontalAlignment="Left" Margin="739,43,0,0" VerticalAlignment="Top"/>

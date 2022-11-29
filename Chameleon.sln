@@ -7,7 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Chameleon", "Chameleon\Cham
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "Client\Client.csproj", "{4B0B53F2-5112-43BF-A2C4-FE45881D9BCF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bot", "Bot\Bot.csproj", "{0B4B3239-A566-4D27-BE2C-52DAE4349420}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bot", "Bot\Bot.csproj", "{0B4B3239-A566-4D27-BE2C-52DAE4349420}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{59DA46B9-5C7B-494E-9E8F-289C4F9C4E29}"
 	ProjectSection(SolutionItems) = preProject

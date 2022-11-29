@@ -18,11 +18,11 @@ namespace Bot
 
             using (Graphics g = Graphics.FromImage(b))
             {
-                g.CopyFromScreen(new Point(rc.Left, rc.Top), Point.Empty, rc.Size);
+                g.CopyFromScreen(new System.Drawing.Point(rc.Left, rc.Top), System.Drawing.Point.Empty, rc.Size);
             }
 
             return b;
         }
     }
 }
-}
+
