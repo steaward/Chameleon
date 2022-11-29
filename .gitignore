@@ -19,3 +19,6 @@
 /.editorconfig
 /Bot/bin/Debug/net6.0
 /Bot/obj
+/Chameleon.Models/obj
+/Win32Api/obj
+/Win32Api/Win32Api.csproj.user
